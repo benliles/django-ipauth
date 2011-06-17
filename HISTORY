@@ -1,4 +1,8 @@
-0.1 (Unreleased)
+0.1 (2011/06/17)
 ----------------
 
-* 
+* IPAddressFormField for inputting IP Addresses
+* IPAddressModelField for storing IP addresses as integers (so math works)
+* Range Model for storing IP Ranges tied to a user account
+* Range Authentication backend
+* A login view wrapper that attempts to login via IP first

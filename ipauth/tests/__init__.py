@@ -1,0 +1,1 @@
+from ipauth.tests.models import *
