@@ -100,7 +100,6 @@ class IPAddressFormField(BaseIPAddressField):
         return value
     
     def to_python(self, value):
-        print 'to_python'
         if value in validators.EMPTY_VALUES:
             return None
         
@@ -144,7 +143,7 @@ class IPAddressModelField(models.IPAddressField):
 class Range(models.Model):
     user = models.ForeignKey(User, related_name='+')
     lower = IPAddressModelField(db_index=True, unique=True)
-    upper = IPAddressModelField(db_index=True, null=True)
+    upper = IPAddressModelField(db_index=True, blank=True, null=True)
     
     def clean(self):
         others = Range.objects.exclude(pk=self.pk)
@@ -162,9 +161,12 @@ class Range(models.Model):
                              upper__gte=self.upper).count() > 0:
                 raise ValidationError('%s is captured by an existing range.' % 
                                       (self.upper,))
-            if self.lower >= self.upper:
-                raise ValidationError('Lower end of the range must be less than '
-                                      'the upper end')
+            try:
+                if self.lower >= self.upper:
+                    raise ValidationError('Lower end of the range must be less '
+                                          'than the upper end')
+            except ValueError, e:
+                pass
     
     def __unicode__(self):
         if self.upper:
