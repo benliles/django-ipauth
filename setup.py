@@ -4,13 +4,13 @@ from setuptools import setup, find_packages
 
 
 
-version = '0.2'
+version = '0.3'
 
 setup(
     name = 'django-ipauth',
     version = version,
     description = "IP Authentication for Django",
-    long_description = open(join(dirname(__file__), 'README')).read() + "\n" + 
+    long_description = open(join(dirname(__file__), 'README')).read() + "\n" +
                        open(join(dirname(__file__), 'HISTORY')).read(),
     classifiers = [
         "Framework :: Django",
