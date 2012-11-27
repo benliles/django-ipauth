@@ -2,6 +2,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core import validators
 from django.db import models
+from django.db.models import Q
 from django.forms import IPAddressField as BaseIPAddressField
 from django.utils.translation import ugettext_lazy as _
 
@@ -146,21 +147,7 @@ class Range(models.Model):
     upper = IPAddressModelField(db_index=True, blank=True, null=True)
 
     def clean(self):
-        others = Range.objects.exclude(pk=self.pk)
-
-        if others.filter(lower__lt=self.lower,
-                         upper__gte=self.lower).count() > 0:
-            raise ValidationError('%s is captured by an existing range.' %
-                                  (self.lower,))
-
-        if self.upper:
-            if others.filter(lower__range=(self.lower, self.upper)):
-                raise ValidationError('%s-%s contains an existing range.' %
-                                      (self.lower, self.upper,))
-            if others.filter(lower__lte=self.upper,
-                             upper__gte=self.upper).count() > 0:
-                raise ValidationError('%s is captured by an existing range.' %
-                                      (self.upper,))
+        if self.upper and self.upper.int:
             try:
                 if self.lower >= self.upper:
                     raise ValidationError('Lower end of the range must be less '
@@ -168,8 +155,26 @@ class Range(models.Model):
             except ValueError, e:
                 pass
 
+        others = Range.objects.exclude(pk=self.pk)
+        query = Q(lower__lte=self.lower, upper__gte=self.lower) | \
+                Q(lower=self.lower)
+        if self.upper and self.upper.int:
+            textual = u'%s-%s' % (self.lower, self.upper)
+            query = query | Q(lower__range=(self.lower, self.upper)) | \
+                    Q(lower__lte=self.upper, upper__gte=self.upper)
+        else:
+            textual = str(self.lower)
+
+        query = others.filter(query)
+
+        if query.exists():
+            values = query.distinct().values_list('user__username', flat=True)
+            raise ValidationError('%s overlaps a range in in use by: %s' % (textual,
+                ', '.join(list(frozenset(values))[:5])))
+
+
     def __unicode__(self):
-        if self.upper:
+        if self.upper and self.upper.int:
             return u'%s %s-%s' % (self.user.get_full_name(), self.lower,
                                   self.upper)
         return u'%s %s' % (self.user.get_full_name(), self.lower)
