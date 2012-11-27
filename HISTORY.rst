@@ -1,3 +1,9 @@
+0.4 (2012/11/27)
+----------------
+
+* Fixed validation bugs in Range
+* Made range collision validation errors more verbose
+
 0.3 (2012/10/22)
 ----------------
 
