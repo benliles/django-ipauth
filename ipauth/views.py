@@ -1,3 +1,4 @@
+from logging import getLogger
 import urlparse
 
 from django.conf import settings
@@ -10,22 +11,31 @@ from django.views.decorators.csrf import csrf_protect
 
 
 
+log = getLogger('ipauth.views')
+
+
 @csrf_protect
 @never_cache
 def login(request, redirect_field_name=REDIRECT_FIELD_NAME, **kwargs):
     redirect_to = request.REQUEST.get(redirect_field_name, '')
-    
+
     value = None
-    
+
     if 'ipauth_meta_key' in kwargs:
+        log.debug('Getting remote IP address from %s' %
+                (kwargs['ipauth_meta_key'],))
         value = request.META.get(kwargs.pop('ipauth_meta_key'), None)
-    
+
     if value is None and hasattr(settings,'IPAUTH_IP_META_KEY'):
+        log.debug('Getting remote IP address from %s' %
+            (settings.IPAUTH_IP_META_KEY,))
         value = request.META.get(settings.IPAUTH_IP_META_KEY, None)
-    
+
     if value is None:
+        log.debug('Getting remote IP address from REMOTE_ADDR')
         value = request.META['REMOTE_ADDR']
-    
+
+    log.debug('Attempting to authenticate %s' % (unicode(value),))
     user = authenticate(ip=value)
     
     if user is None:
